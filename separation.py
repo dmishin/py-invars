@@ -7,21 +7,29 @@ x=numpy.linspace(0,1,100)
 y=numpy.sin(x)
 
 
-textdata = """
+textdata1 = """
 xxx  
-  x x xx x             yyy  y 
+  x x xx x              yy  y 
    xx x x x             yyyy
-    xxx  x x x x        yy 
-       x x xx   x x      yyyyyyyyy
-           xx xxx    x x     
-            xx x yyyy  xxxx
-            xxx  yyyy xxx 
-              xxx     xxx
-                xx
-                 x
-                 xxx
-                 x x
-                 x
+    xxx  x x x          yy 
+       x x xx            yyyyyyyyy
+                             
+"""
+textdata = """
+                        yyyy
+                         yy
+                       yyyyy
+
+xxx  xxxxxxxxx xxxxxxxxxxxxxxxxxx  xxxxxxxxxxxxxx
+                              
+                               x             xxx
+                        yy 
+                         yyyyyyyyy       xx 
+                         
+          xxxx                            xx
+          xx  xx                         x x
+           xxxxxx xxxxxxxxxxxxxxxx x x x
+                             
 """
 
 def convert_text_data(text, x0=0, dx=0.1, y0=0, dy=-0.1, randomize = True):
@@ -105,13 +113,89 @@ def normalize_points(*point_arrays):
     return means, ranges
 
 
+
+
+def mean_a_at (V):
+    """ 1/n * sum( A_i*A_I^T )
+where A_i is i'th column vector.
+Result is square symmetric matrix of the same size as the vector dimensoin
+V must be an numpy array
+"""
+    assert(isinstance(V, numpy.array))
+    n,N = V.shape #n - size of the vector, N - number of vectors
+    M = numpy.dot(V*V.T)*(1.0/N)
+    return M
+
+def column(vec):
+    """Convert 1-d vector to the column vector"""
+    shp = vec.shape
+    if len(shp) != 1: raise ValueError, "matrix must b 1D numpy array"
+    rval = numpy.array(vec, copy = False)
+    rval.shape = shp+(1,)
+    return rval
+    
+def calculate_d_matrix(A,B):
+    """D = A*A' + B*B' - sum(Ai)*sum(Bi)' - sum(Bi)*sum(Ai)'
+Main eigenvector of this matrix is the directin, in which vector clouds A and B are most distinguishable"""
+    mA = column(numpy.mean(A, 1)) #sum of all vectors A
+    mB = column(numpy.mean(B, 1))
+    
+    D =   numpy.dot(A,A.T)/A.shape[1] \
+        + numpy.dot(B,B.T)/B.shape[1] \
+        - numpy.dot(mA,mB.T)          \
+        - numpy.dot(mB,mA.T)
+    return D
+
 def test():
+    M = 2 #size of the reduced vector
+    
+    #prepare data
     random.seed(1001)
     data = convert_text_data(textdata)
-    normalize_points(*(data.values()))
-    plot_points(*(data.values()))
-    pyplot.axis([-1.1,1.1,-1.1,1.1])
-    pyplot.show()
-
+    X = data['x']
+    Y = data['y']
+    
+    #normalize data
+    normalize_points(X,Y)
+    
+    for iter in range(30):
+        print "========================================================"
+        print "Iteration", iter
+        #expansion
+        Xe = nonlinear_expand(X)
+        Ye = nonlinear_expand(Y)
+        
+        #calculate the best separation for the expanded points:
+        lam_e, h_e = numpy.linalg.eigh( calculate_d_matrix(Xe,Ye) )
+        #columns of H are eigenvectors
+        print "Lambda for the expanded points:", lam_e
+        #get the M highest eigenvectors and their eigenvalues
+        lam_h = [(lam_e[i], h_e[:,i:(i+1)]) for i in xrange(len(lam_e))]
+        lam_h.sort(key=lambda x:x[0])
+        lam_h = lam_h[-M:]
+        print "Principial lambda:", [l for l,h in lam_h]
+        h_red = numpy.hstack([h for l,h in lam_h])
+        print "Principial eigenvectors:\n", h_red
+        
+        #reducing the dimension
+        Xe_red = numpy.dot(h_red.T, Xe)
+        Ye_red = numpy.dot(h_red.T, Ye)
+        
+        #normalize points
+        normalize_points(Xe_red,Ye_red)
+        
+            
+        plot_points(Xe_red, Ye_red)
+        pyplot.axis([-2,2,-2,2])
+        pyplot.show()
+        
+        raw_input("Press enter")
+        pyplot.close()
+        
+        #and repeat the iteration
+        X = Xe_red
+        Y = Ye_red
 
 test()
+
+
