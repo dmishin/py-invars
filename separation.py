@@ -17,6 +17,11 @@ xxx
             xx x yyyy  xxxx
             xxx  yyyy xxx 
               xxx     xxx
+                xx
+                 x
+                 xxx
+                 x x
+                 x
 """
 
 def convert_text_data(text, x0=0, dx=0.1, y0=0, dy=-0.1, randomize = True):
@@ -69,6 +74,18 @@ def nonlinear_expand(vectors):
     return numpy.vstack(st)
 
 
+def scale_vectors(vectors, scale):
+    """Same as vectors := diag(scale)*vectors"""
+    assert(vectors.shape[0]==len(scale))
+    for i in xrange(vectors.shape[0]):
+        vectors[i,:] *= scale[i]
+        
+def offset_vectors(vectors, offset):
+    assert(vectors.shape[0]==len(offset))
+    for i in xrange(vectors.shape[0]):
+        vectors[i,:] += offset[i]
+    
+
 #print nonlinear_expand(data['x'])
 
 def normalize_points(*point_arrays):
@@ -83,15 +100,18 @@ def normalize_points(*point_arrays):
     ranges = (maximums-minimums)*0.5
     
     for points in point_arrays:
-        for idx in range(maximums.size):
-            points[idx,:] -= means[idx]
-            points[idx,:] /= ranges[idx]
+        offset_vectors(points, -means)
+        scale_vectors(points, 1.0/ranges)
     return means, ranges
 
-data = convert_text_data(textdata)
 
-normalize_points(data['x'],data['y'])
+def test():
+    random.seed(1001)
+    data = convert_text_data(textdata)
+    normalize_points(*(data.values()))
+    plot_points(*(data.values()))
+    pyplot.axis([-1.1,1.1,-1.1,1.1])
+    pyplot.show()
 
-plot_points(data['x'],data['y'])
-pyplot.show()
 
+test()
