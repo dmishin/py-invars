@@ -30,7 +30,7 @@ xxx  xxxxxxxxx xxxxxxxxxxxxxxxxxx  xxxxxxxxxxxxxx
           xxxx                            xx
           xx  xx                         x x
            xxxxxx xxxxxxxxxxxxxxxx x x x
-                             
+                                                       yyyyyyyyyyyyyyyy
 """
 
 def convert_text_data(text, x0=0, dx=0.1, y0=0, dy=-0.1, randomize = True):
@@ -72,7 +72,9 @@ def plot_points(*point_arrays):
 
 expansion_functions = [
     numpy.vectorize(lambda x: x*x),
-    numpy.vectorize(lambda x:math.atan(x))
+    #numpy.vectorize(lambda x:math.atan(x)),
+    #numpy.cos,
+    #numpy.abs,
     ]
 
 def nonlinear_expand(vectors):
@@ -199,13 +201,14 @@ def test():
         
 def test1():
     "Testing with modified algorithm"
-    M = 2 #size of the reduced vector
+    M = 3 #size of the reduced vector
     
     #prepare data
     random.seed(1001)
     data = convert_text_data(textdata)
     X = data['x']
     Y = data['y']
+    pyplot.figure(1)
     
     #normalize data
     normalize_points(X,Y)
@@ -226,11 +229,10 @@ def test1():
         P = R - numpy.dot(A0,B0.T) - numpy.dot(B0, A0.T)
         Q = R - numpy.dot(A0,A0.T) - numpy.dot(B0, B0.T)
         
-        print "lam P", numpy.linalg.eigh(P)[0]
-        print "lam Q", numpy.linalg.eigh(Q)[0]
+        #print "lam P", numpy.linalg.eigh(P)[0]
+        #print "lam Q", numpy.linalg.eigh(Q)[0]
         
         # Px = lambda*Qx
-        #lam, H = numpy.linalg.eig(numpy.dot(numpy.linalg.inv(Q), P)) #TODO: ineffective solution of the general eigenvalue problem
         lam, H = scipy.linalg.eigh(P, Q)
         
         #test the criteria
@@ -242,7 +244,7 @@ def test1():
         #columns of H are eigenvectors
         print "Lambda for the expanded points:", lam
         #get the M highest eigenvectors and their eigenvalues
-        H = H[:, -M:]
+        H = H[:, (H.shape[1]-1):(H.shape[1]-1-M):(-1)]
         print "Principial eigenvectors:\n", H
         
         #reducing the dimension
