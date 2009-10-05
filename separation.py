@@ -203,7 +203,7 @@ def test1():
     
     #prepare data
     random.seed(1001)
-    data = convert_text_data(textdata1)
+    data = convert_text_data(textdata)
     X = data['x']
     Y = data['y']
     
@@ -226,8 +226,12 @@ def test1():
         P = R - numpy.dot(A0,B0.T) - numpy.dot(B0, A0.T)
         Q = R - numpy.dot(A0,A0.T) - numpy.dot(B0, B0.T)
         
+        print "lam P", numpy.linalg.eigh(P)[0]
+        print "lam Q", numpy.linalg.eigh(Q)[0]
+        
         # Px = lambda*Qx
-        lam, H = numpy.linalg.eigh(numpy.dot(numpy.linalg.inv(Q), P)) #TODO: ineffective solution of the general eigenvalue problem
+        #lam, H = numpy.linalg.eig(numpy.dot(numpy.linalg.inv(Q), P)) #TODO: ineffective solution of the general eigenvalue problem
+        lam, H = scipy.linalg.eigh(P, Q)
         
         #test the criteria
         for col in xrange(len(H)):
