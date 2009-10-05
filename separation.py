@@ -2,6 +2,7 @@ import numpy
 from matplotlib import pyplot
 import random
 import math
+import scipy.linalg
 
 x=numpy.linspace(0,1,100)
 y=numpy.sin(x)
@@ -195,7 +196,68 @@ def test():
         #and repeat the iteration
         X = Xe_red
         Y = Ye_red
+        
+def test1():
+    "Testing with modified algorithm"
+    M = 2 #size of the reduced vector
+    
+    #prepare data
+    random.seed(1001)
+    data = convert_text_data(textdata1)
+    X = data['x']
+    Y = data['y']
+    
+    #normalize data
+    normalize_points(X,Y)
+    
+    for iter in range(30):
+        print "========================================================"
+        print "Iteration", iter
+        #expansion
+        A = nonlinear_expand(X)
+        B = nonlinear_expand(Y)
+        na = A.shape[1]
+        nb = B.shape[1]
+        
+        #calculate the best separation for the expanded points:
+        R = numpy.dot(A,A.T)*(1.0/na) + numpy.dot(B,B.T)*(1.0/nb)
+        A0 = column(A.mean(1))
+        B0 = column(B.mean(1))
+        P = R - numpy.dot(A0,B0.T) - numpy.dot(B0, A0.T)
+        Q = R - numpy.dot(A0,A0.T) - numpy.dot(B0, B0.T)
+        
+        # Px = lambda*Qx
+        lam, H = numpy.linalg.eigh(numpy.dot(numpy.linalg.inv(Q), P)) #TODO: ineffective solution of the general eigenvalue problem
+        
+        #test the criteria
+        for col in xrange(len(H)):
+            hi = H[:,col:(col+1)]
+            k = numpy.dot(numpy.dot(hi.T,P),hi)[0,0] / numpy.dot(numpy.dot(hi.T,Q),hi)[0,0]
+            print "lambda=",lam[col], "K(hi)=",k
+        
+        #columns of H are eigenvectors
+        print "Lambda for the expanded points:", lam
+        #get the M highest eigenvectors and their eigenvalues
+        H = H[:, -M:]
+        print "Principial eigenvectors:\n", H
+        
+        #reducing the dimension
+        X = numpy.dot(H.T, A)
+        Y = numpy.dot(H.T, B)
+        
+        #normalize points
+        normalize_points(X, Y)
+        
+            
+        plot_points(X, Y)
+        pyplot.axis([-2,2,-2,2])
+        pyplot.show()
+        
+        raw_input("Press enter")
+        pyplot.close()
+        
+        #and repeat the iteration
 
-test()
+test1()
 
 
